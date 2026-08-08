@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { apiRequest } from "../Api/AuthApi"; 
+import {useNavigate} from "react-router-dom";
 
 const Login = () => {
     const [form, setForm] = useState({
@@ -9,6 +10,7 @@ const Login = () => {
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         setForm((prev) => ({
@@ -40,10 +42,9 @@ const Login = () => {
                 response.data.token
             );
 
-            alert("Login Successful");
+            //alert("Login Successful");
 
-            // Later:
-            // navigate("/dashboard");
+            navigate("/dashboard");
 
         } catch (err) {
             setError("Something went wrong.");

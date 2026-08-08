@@ -2,7 +2,7 @@ import { useState, useEffect} from "react";
 import { apiRequest } from "../Api/AuthApi";
 import { AuthContext } from "./AuthContext";
 
-const AuthProvider = () => {
+const AuthProvider = ({children}) => {
 
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -21,7 +21,7 @@ const AuthProvider = () => {
             try {
 
                 const response = await apiRequest(
-                    "/api/profile"
+                    "/api/me"
                 );
 
                 if (response.success) {

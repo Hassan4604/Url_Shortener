@@ -51,4 +51,12 @@ class AuthController extends Controller
             $result
         );
     }
+
+    public function me()
+    {
+    Response::success(
+        "User fetched successfully",
+        $this->request->user()
+    );
+    }
 }
