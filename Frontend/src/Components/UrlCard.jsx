@@ -1,172 +1,192 @@
-import React, { useContext, useEffect, useState } from "react";
-import { AuthContext } from "../Context/AuthContext";
+import React, { useState } from "react";
 import { apiRequest } from "../Api/AuthApi";
+import { toast } from "react-toastify";
 
-import UrlForm from "../Components/UrlForm";
-import UrlCard from "../Components/UrlCard";
+const BASE_SHORT_URL =
+    "http://localhost/url_shortener/Backend/Public";
 
-const Dashboard = () => {
+const UrlCard = ({ url, onDelete }) => {
 
-    const { user, setUser } = useContext(AuthContext);
+    const [deleting, setDeleting] = useState(false);
+    const [copied, setCopied] = useState(false);
 
-    const [urls, setUrls] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+    const shortUrl = `${BASE_SHORT_URL}/${url.short_code}`;
 
-    const fetchUrls = async () => {
 
-        setLoading(true);
-        setError("");
+    const handleCopy = async () => {
 
         try {
 
-            const response = await apiRequest(
-                "/api/urls",
-                "GET"
-            );
+            await navigator.clipboard.writeText(shortUrl);
 
-            if (!response.success) {
-                setError(response.message);
-                return;
-            }
+            setCopied(true);
 
-            setUrls(response.data);
+            toast.success("Short URL copied!");
 
-        } catch (err) {
+            setTimeout(() => {
+                setCopied(false);
+            }, 2000);
 
-            console.error(err);
-            setError("Failed to fetch URLs.");
+        } catch (error) {
 
-        } finally {
+            console.error(error);
 
-            setLoading(false);
+            toast.error("Failed to copy URL.");
 
         }
     };
 
 
-    useEffect(() => {
-        fetchUrls();
-    }, []);
+    const handleDelete = async () => {
 
+        setDeleting(true);
 
-    const handleUrlCreated = (newUrl) => {
+        try {
 
-        setUrls((prevUrls) => [
-            newUrl,
-            ...prevUrls
-        ]);
+            const response = await apiRequest(
+                `/api/urls/${url.id}`,
+                "DELETE"
+            );
 
-    };
+            if (!response.success) {
 
+                toast.error(
+                    response.message || "Failed to delete URL."
+                );
 
-    const handleDelete = (id) => {
+                return;
+            }
 
-        setUrls((prevUrls) =>
-            prevUrls.filter((url) => url.id !== id)
-        );
+            toast.success("URL deleted successfully!");
 
-    };
+            onDelete(url.id);
 
+        } catch (error) {
 
-    const handleLogout = () => {
+            console.error(error);
 
-        localStorage.removeItem("token");
+            toast.error(
+                "Something went wrong while deleting the URL."
+            );
 
-        setUser(null);
+        } finally {
 
+            setDeleting(false);
+
+        }
     };
 
 
     return (
-        <div>
 
-            <nav>
+        <div className="group rounded-xl border border-slate-800 bg-slate-900/70 p-6 shadow-lg transition duration-200 hover:border-slate-700 hover:bg-slate-900 hover:shadow-xl">
 
-                <h2>URL Shortener</h2>
+            <div className="mb-5 flex items-start justify-between gap-4">
 
-                <div>
+                <div className="min-w-0">
 
-                    <span>
-                        Welcome, {user?.name || user?.email}
-                    </span>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        Original URL
+                    </p>
 
-                    <button onClick={handleLogout}>
-                        Logout
-                    </button>
+                    <a
+                        href={url.original_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={url.original_url}
+                        className="block truncate text-sm text-slate-300 transition hover:text-blue-400"
+                    >
+                        {url.original_url}
+                    </a>
 
                 </div>
 
-            </nav>
+
+                <div className="shrink-0 rounded-lg border border-slate-700 bg-slate-950 px-4 py-2 text-center">
+
+                    <p className="text-xs text-slate-500">
+                        Clicks
+                    </p>
+
+                    <p className="text-lg font-bold text-slate-200">
+                        {url.clicks}
+                    </p>
+
+                </div>
+
+            </div>
 
 
-            <main>
-
-                <h1>Dashboard</h1>
-
-                <p>
-                    Create and manage your shortened URLs.
-                </p>
+            <div className="mb-5 h-px bg-slate-800"></div>
 
 
-                {/* URL Form */}
+            <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-4">
 
-                <section>
+                <div className="mb-2 flex items-center justify-between">
 
-                    <h2>Shorten a URL</h2>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-blue-400">
+                        Short URL
+                    </p>
 
-                    <UrlForm
-                        onUrlCreated={handleUrlCreated}
-                    />
+                    <span className="rounded-full bg-green-500/10 px-2 py-1 text-xs font-medium text-green-400">
+                        Active
+                    </span>
 
-                </section>
-
-
-                {/* URL List */}
-
-                <section>
-
-                    <h2>Your URLs</h2>
-
-                    {error && (
-                        <p>{error}</p>
-                    )}
+                </div>
 
 
-                    {loading ? (
+                <a
+                    href={shortUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block break-all text-sm font-medium text-blue-400 transition hover:text-blue-300"
+                >
+                    {shortUrl}
+                </a>
 
-                        <p>Loading URLs...</p>
+            </div>
 
-                    ) : urls.length === 0 ? (
 
-                        <p>
-                            You haven't shortened any URLs yet.
-                        </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+
+                <button
+                    onClick={handleCopy}
+                    className={`rounded-lg px-5 py-2.5 text-sm font-medium shadow-sm transition duration-200 active:scale-95 ${
+                        copied
+                            ? "bg-green-600 text-white hover:bg-green-500"
+                            : "bg-blue-600 text-white hover:bg-blue-500 hover:shadow-md"
+                    }`}
+                >
+                    {copied ? "✓ Copied" : "Copy URL"}
+                </button>
+
+
+                <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="rounded-lg border border-red-500/30 bg-red-500/10 px-5 py-2.5 text-sm font-medium text-red-400 transition duration-200 hover:border-red-500/50 hover:bg-red-500/20 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    {deleting ? (
+
+                        <span className="flex items-center gap-2">
+
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-red-400/30 border-t-red-400"></span>
+
+                            Deleting...
+
+                        </span>
 
                     ) : (
 
-                        <div>
-
-                            {urls.map((url) => (
-
-                                <UrlCard
-                                    key={url.id}
-                                    url={url}
-                                    onDelete={handleDelete}
-                                />
-
-                            ))}
-
-                        </div>
+                        "Delete"
 
                     )}
+                </button>
 
-                </section>
-
-            </main>
+            </div>
 
         </div>
     );
 };
 
-export default Dashboard;
+export default UrlCard;

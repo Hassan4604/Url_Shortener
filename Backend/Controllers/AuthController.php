@@ -54,9 +54,19 @@ class AuthController extends Controller
 
     public function me()
     {
+    $payload = $this->request->user();
+
+    $user = $this->authService->getUserById(
+        $payload['id']
+    );
+
+    if (!$user) {
+        Response::notFound("User not found");
+    }
+
     Response::success(
         "User fetched successfully",
-        $this->request->user()
-    );
+        $user
+     );
     }
 }
